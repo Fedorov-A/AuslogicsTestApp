@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using AuslogicsTestApp.ViewModels;
+
 namespace AuslogicsTestApp
 {
     /// <summary>
@@ -23,6 +25,8 @@ namespace AuslogicsTestApp
         public MainWindow()
         {
             InitializeComponent();
+
+            DataContext = new FileInfoViewModel();
         }
     }
 }
