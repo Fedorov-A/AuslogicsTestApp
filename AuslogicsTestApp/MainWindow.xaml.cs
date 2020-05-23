@@ -26,7 +26,7 @@ namespace AuslogicsTestApp
         {
             InitializeComponent();
 
-            DataContext = new FileInfoViewModel();
+            DataContext = new FilesInfoViewModel();
         }
     }
 }

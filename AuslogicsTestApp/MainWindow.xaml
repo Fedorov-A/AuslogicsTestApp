@@ -12,24 +12,24 @@
             <RowDefinition/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
-        <DockPanel >
+        <DockPanel IsEnabled="{Binding Path=ReadingInProgress, Mode=OneWay}">
             <Button Margin="5" Padding="5" HorizontalAlignment="Left" Command="{Binding UpdateCommand}">Update</Button>
-            <CheckBox Margin="5" VerticalContentAlignment="Center" IsChecked="{Binding Path=FindInRegistry}">Registry</CheckBox>
-            <CheckBox Margin="5" VerticalContentAlignment="Center" IsChecked="{Binding Path=FindInStartMenu}">Start Menu</CheckBox>
+            <CheckBox Margin="5" VerticalContentAlignment="Center" IsChecked="{Binding Path=ReadInRegistry}">Registry</CheckBox>
+            <CheckBox Margin="5" VerticalContentAlignment="Center" IsChecked="{Binding Path=ReadInStartupMenu}">Startup Menu</CheckBox>
         </DockPanel>
-        <ListBox Grid.Row="1" Margin="5" ItemsSource="{Binding FilesInfo}">
+        <ListBox Grid.Row="1" Margin="5" ItemsSource="{Binding FilesInfo, Mode=OneWay}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <DockPanel>
-                        <TextBlock Text="{Binding Path=Image}" Margin="5,5,2.5,5"></TextBlock>
-                        <TextBlock Text="{Binding Path=ExecutableFile}"  Margin="2.5,5,2.5,5"></TextBlock>
-                        <TextBlock Text="{Binding Path=CliParameters}"  Margin="2.5,5,2.5,5"></TextBlock>
-                        <TextBlock Text="{Binding Path=Path}" Margin="2.5,5,2.5,5"></TextBlock>
-                        <TextBlock Text="{Binding Path=AutoStartType}" Margin="2.5,5,5,5"></TextBlock>
+                        <Image VerticalAlignment="Center" Source="{Binding Path=FileIcon}" Margin="5,5,2.5,5"></Image>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Path=ExecutableFile}" Margin="2.5,5,2.5,5"></TextBlock>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Path=Parameters}" Margin="2.5,5,2.5,5"></TextBlock>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Path=Path}" Margin="2.5,5,2.5,5"></TextBlock>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Path=AutostartType}" Margin="2.5,5,5,5"></TextBlock>
                     </DockPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-        <ProgressBar Grid.Row="2" Margin="5"></ProgressBar>
+        <ProgressBar Grid.Row="2" Margin="5" Value="{Binding Path=ReadingProgress, Mode=OneWay}"></ProgressBar>
     </Grid>
 </Window>

@@ -1,73 +1,119 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media.Imaging;
 
 namespace AuslogicsTestApp.Models
 {
+	/// <summary>
+	/// A Model for file information
+	/// </summary>
     public class FileInfoModel : INotifyPropertyChanged
     {
-		private string image;
-		private string executableFile;
-		private string cliParameters;
-		private string path;
+		public FileInfoModel()
+		{
+				
+		}
+
+
+		#region Events
+
+		public event PropertyChangedEventHandler PropertyChanged;
+
+		#endregion
+
+
+		#region Fields
+
+		private BitmapSource fileIcon;
+		private FileInfo info;
+		private string parameters;
 		private string autoStartType;
 
-		public string Image
+		#endregion
+
+
+		#region Properties
+
+		/// <summary>
+		/// File icon
+		/// </summary>
+		public BitmapSource FileIcon
 		{
 			get 
 			{ 
-				return image;
+				return fileIcon;
 			}
 			set
 			{ 
-				image = value;
+				fileIcon = value;
 				OnPropertyChanged("Image");
 			}
 		}
 
-		public string ExecutableFile
+		/// <summary>
+		/// File info
+		/// </summary>
+		public FileInfo Info
 		{
-			get 
-			{ 
-				return executableFile; 
-			}
-			set 
+			get
 			{
-				executableFile = value;
+				return info;
+			}
+			set
+			{
+				info = value;
 				OnPropertyChanged("ExecutableFile");
 			}
 		}
 
-		public string CliParameters
+		/// <summary>
+		/// File name with extention
+		/// </summary>
+		public string ExecutableFile
+		{
+			get 
+			{ 
+				return info.Name; 
+			}
+		}
+
+		/// <summary>
+		/// Command line commands for starting file
+		/// </summary>
+		public string Parameters
 		{
 			get
 			{
-				return cliParameters; 
+				return parameters; 
 			}
 			set 
 			{
-				cliParameters = value;
+				parameters = value;
 				OnPropertyChanged("CliParameters");
 			}
 		}
 		
+		/// <summary>
+		/// Directory with file
+		/// </summary>
 		public string Path
 		{
 			get 
 			{
-				return path; 
-			}
-			set 
-			{ 
-				path = value;
-				OnPropertyChanged("Path");
+				return info.DirectoryName; 
 			}
 		}
 		
-		public string AutoStartType
+		/// <summary>
+		/// Autostart type (Registry or Startup Menu)
+		/// </summary>
+		public string AutostartType
 		{
 			get 
 			{ 
@@ -80,11 +126,16 @@ namespace AuslogicsTestApp.Models
 			}
 		}
 
-		public event PropertyChangedEventHandler PropertyChanged;
+		#endregion
 
-		public void OnPropertyChanged(string proptyName)
+
+		#region Handlers
+
+		private void OnPropertyChanged(string proptyName)
 		{
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(proptyName));
 		}
+		
+		#endregion
 	}
 }
