@@ -1,16 +1,15 @@
-﻿using System;
+﻿using AuslogicsTestApp.Models;
+using Microsoft.Win32;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using AuslogicsTestApp.Models;
-using Microsoft.Win32;
 
 namespace AuslogicsTestApp
 {
@@ -61,27 +60,151 @@ namespace AuslogicsTestApp
             }
 
             foreach (var file in Directory.GetFiles(directory))
-            {
-                var fileInfo = GetFileInfo(file, "", "StartupMenu");
-
-                var link = File.ReadAllBytes(file);
-
-                //using (var stream = new FileStream(file, FileMode.Open))
-                //{
-                //    while (stream.CanRead)
-                //    {
-                //        var newByte = stream.ReadByte();
-                //    }
-                //}
-
+            {                
                 // Unneccessary ini-files
-                if (fileInfo.Info.Extension != ".ini")
+                if ((new FileInfo(file)).Extension != ".ini")
                 {
-                    filesInfo.Add(fileInfo);
+                    var link = WindowsShortcutParser(file);
+
+                    filesInfo.Add(link);
                 }
             }
 
             return filesInfo;
+        }
+
+        /// <summary>
+        /// Very basic windows shortcut parser
+        /// <para>Based on https://github.com/libyal/liblnk/blob/master/documentation/Windows%20Shortcut%20File%20(LNK)%20format.asciidoc</para>
+        /// </summary>
+        /// <param name="path">Path to windows shortcut file</param>
+        /// <returns>FileInfoModel of executable file</returns>
+        public static FileInfoModel WindowsShortcutParser(string path)
+        {
+            string executableFilePath = "";
+            var parameters = "";
+
+            using (var binaryReader = new BinaryReader(File.OpenRead(path), Encoding.ASCII))
+            {
+                // Header
+                var headerSize = binaryReader.ReadUInt32();
+                var guid = binaryReader.ReadBytes(16);
+                var dataFlags = binaryReader.ReadUInt32();
+                var fileAttributes = binaryReader.ReadUInt32();
+                var creationDateAndTime = binaryReader.ReadUInt64();
+                var lastAccessDateAndtime = binaryReader.ReadUInt64();
+                var lastModificationDateAndTime = binaryReader.ReadUInt64();
+                var fileSizeInBytes = binaryReader.ReadUInt32();
+                var iconIndexValue = binaryReader.ReadUInt32();
+                var showWindowValue = binaryReader.ReadUInt32();
+                var hotKey = binaryReader.ReadUInt16();
+                var unknown1 = binaryReader.ReadUInt16();
+                var unknown2 = binaryReader.ReadUInt32();
+                var unknown3 = binaryReader.ReadUInt32();
+
+                var dataFlagsBits = new BitArray(new int[] { (int) dataFlags });
+                               
+                // Link target identifier
+                if (dataFlagsBits.Get(0))
+                {
+                    // Skip uneccessary data
+                    var bytesToSkip = binaryReader.ReadUInt16();
+                    binaryReader.BaseStream.Seek(bytesToSkip, SeekOrigin.Current);
+                }
+
+                // Location information
+                if (dataFlagsBits.Get(1))
+                {
+                    var sizeOfLocationInfo = binaryReader.ReadUInt32();
+                    var locationInformationHeaderSize = binaryReader.ReadUInt32();
+                    var locationFlags= binaryReader.ReadUInt32();
+                    var offsetVolume= binaryReader.ReadUInt32();
+                    var offsetLocalPath = binaryReader.ReadUInt32();
+                    var offsetNetwork = binaryReader.ReadUInt32();
+                    var offsetCommonPath = binaryReader.ReadUInt32();
+                    
+                    // Jump to local path
+                    binaryReader.BaseStream.Seek(offsetLocalPath - locationInformationHeaderSize, SeekOrigin.Current);
+
+                    List<byte> charList = new List<byte>();
+
+                    byte newChar = binaryReader.ReadByte();
+
+                    while (newChar != '\0')
+                    {
+                        charList.Add(newChar);
+                        newChar = binaryReader.ReadByte();
+                    }
+
+                    executableFilePath = Encoding.GetEncoding("Windows-1251").GetString(charList.ToArray());
+
+                    newChar = binaryReader.ReadByte();
+
+                    while (newChar != '\0')
+                    {
+                        charList.Add(newChar);
+                        newChar = binaryReader.ReadByte();
+                    }
+                }
+
+                // Description
+                if (dataFlagsBits.Get(2))
+                {
+                    // Unneccessary
+                    var charsNumber = binaryReader.ReadUInt16();
+                    var description = readDataStrings(binaryReader, charsNumber);
+                }
+
+                // Relative path
+                if (dataFlagsBits.Get(3))
+                {
+                    // Unneccessary
+                    var charsNumber = binaryReader.ReadUInt16();
+                    var relativePath = readDataStrings(binaryReader, charsNumber);
+                }
+
+                // Working directory
+                if (dataFlagsBits.Get(4))
+                {
+                    // Unneccessary
+                    var charsNumber = binaryReader.ReadUInt16();
+                    var workingDirectory = readDataStrings(binaryReader, charsNumber);
+                }
+
+                // Command line parameters
+                if (dataFlagsBits.Get(5))
+                {
+                    var charsNumber = binaryReader.ReadUInt16();
+                    parameters = readDataStrings(binaryReader, charsNumber);
+                }
+            }
+
+            var fileInfo = GetFileInfo(executableFilePath, parameters, "Startup Menu");
+
+            return fileInfo;
+        }
+
+        /// <summary>
+        /// Method for reading strings according to 
+        /// <para>https://github.com/libyal/liblnk/blob/master/documentation/Windows%20Shortcut%20File%20(LNK)%20format.asciidoc#5-data-strings</para>
+        /// </summary>
+        /// <param name="binaryReader">Binary reader of windows shortcut file</param>
+        /// <returns></returns>
+        private static string readDataStrings(BinaryReader binaryReader, UInt16 charsNumber)
+        {
+            byte[] chars = new byte[charsNumber];
+
+            for (var i = 0; i < charsNumber; i++)
+            {
+                chars[i] = binaryReader.ReadByte();
+
+                // Offset
+                binaryReader.ReadByte();
+            }
+
+            var decodedString = Encoding.GetEncoding("Windows-1251").GetString(chars);
+
+            return decodedString;
         }
 
         /// <summary>
